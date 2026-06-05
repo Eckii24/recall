@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from math import ceil
 from datetime import date, timedelta
+from math import ceil
 
 from recall.scheduler.base import CardState, Rating, Scheduler
 

@@ -36,7 +36,10 @@ def test_init_supports_custom_decks_dir(tmp_path, monkeypatch):
 
     assert result.exit_code == ExitCode.OK
     assert (tmp_path / "notes").is_dir()
-    assert json.loads((tmp_path / "recall.config.json").read_text())["decks_dir"] == "notes"
+    assert (
+        json.loads((tmp_path / "recall.config.json").read_text())["decks_dir"]
+        == "notes"
+    )
 
 
 def test_init_rejects_invalid_config_file(tmp_path, monkeypatch):

@@ -25,8 +25,17 @@ class SM2SchedulerTests(unittest.TestCase):
         self.assertEqual(rating_to_quality("easy"), 5)
 
     def test_is_due_checks_calendar_day(self) -> None:
-        self.assertTrue(self.scheduler.is_due(CardState(due=self.today, ease=2.5, interval=0, reps=0), self.today))
-        self.assertFalse(self.scheduler.is_due(CardState(due=date(2026, 6, 6), ease=2.5, interval=0, reps=0), self.today))
+        self.assertTrue(
+            self.scheduler.is_due(
+                CardState(due=self.today, ease=2.5, interval=0, reps=0), self.today
+            )
+        )
+        self.assertFalse(
+            self.scheduler.is_due(
+                CardState(due=date(2026, 6, 6), ease=2.5, interval=0, reps=0),
+                self.today,
+            )
+        )
 
     def test_review_good_on_new_card_advances_interval(self) -> None:
         new_state = self.scheduler.review(
@@ -34,12 +43,16 @@ class SM2SchedulerTests(unittest.TestCase):
             "good",
             self.today,
         )
-        self.assertEqual(new_state, CardState(due=date(2026, 6, 6), ease=2.36, interval=1, reps=1))
+        self.assertEqual(
+            new_state, CardState(due=date(2026, 6, 6), ease=2.36, interval=1, reps=1)
+        )
 
     def test_review_again_resets_reps_and_due_to_tomorrow(self) -> None:
         state = CardState(due=self.today, ease=2.5, interval=6, reps=2)
         reviewed = self.scheduler.review(state, "again", self.today)
-        self.assertEqual(reviewed, CardState(due=date(2026, 6, 6), ease=1.7, interval=1, reps=0))
+        self.assertEqual(
+            reviewed, CardState(due=date(2026, 6, 6), ease=1.7, interval=1, reps=0)
+        )
 
 
 if __name__ == "__main__":

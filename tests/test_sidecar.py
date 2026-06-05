@@ -4,18 +4,25 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from typing import cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from recall.sidecar import SCHEMA_VERSION, create_empty_sidecar, load_sidecar, save_sidecar
+from recall.infrastructure.sidecar_store import SidecarData
 from recall.scheduler.base import CardState
+from recall.sidecar import (
+    SCHEMA_VERSION,
+    create_empty_sidecar,
+    load_sidecar,
+    save_sidecar,
+)
 
 
 class SidecarPersistenceTests(unittest.TestCase):
     def test_save_and_load_sidecar_uses_stable_pretty_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "architecture.flashcards.json"
-            sidecar = {
+            sidecar: SidecarData = {
                 "version": SCHEMA_VERSION,
                 "deck": "architecture",
                 "cards": {
@@ -32,10 +39,23 @@ class SidecarPersistenceTests(unittest.TestCase):
             raw = path.read_text(encoding="utf-8")
 
             self.assertTrue(raw.endswith("\n"))
-            self.assertIn('  "cards": {\n    "architecture-cqrs": {\n      "due": "2026-06-06",\n      "ease": 2.36,\n      "interval": 1,\n      "reps": 1\n    }\n  },', raw)
+            self.assertIn(
+                '  "cards": {\n'
+                '    "architecture-cqrs": {\n'
+                '      "due": "2026-06-06",\n'
+                '      "ease": 2.36,\n'
+                '      "interval": 1,\n'
+                '      "reps": 1\n'
+                "    }\n"
+                "  },",
+                raw,
+            )
             loaded = load_sidecar(path)
             self.assertEqual(loaded["deck"], "architecture")
-            self.assertEqual(loaded["cards"]["architecture-cqrs"], sidecar["cards"]["architecture-cqrs"])
+            self.assertEqual(
+                loaded["cards"]["architecture-cqrs"],
+                sidecar["cards"]["architecture-cqrs"],
+            )
 
     def test_save_sidecar_is_atomic_and_does_not_leave_tmp_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -44,17 +64,27 @@ class SidecarPersistenceTests(unittest.TestCase):
 
             save_sidecar(
                 path,
-                {
-                    "version": SCHEMA_VERSION,
-                    "deck": "architecture",
-                    "cards": {
-                        "a": CardState(due=date(2026, 6, 5), ease=2.5, interval=0, reps=0)
+                cast(
+                    SidecarData,
+                    {
+                        "version": SCHEMA_VERSION,
+                        "deck": "architecture",
+                        "cards": {
+                            "a": CardState(
+                                due=date(2026, 6, 5),
+                                ease=2.5,
+                                interval=0,
+                                reps=0,
+                            )
+                        },
                     },
-                },
+                ),
             )
 
             self.assertFalse(path.with_suffix(path.suffix + ".tmp").exists())
-            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["deck"], "architecture")
+            self.assertEqual(
+                json.loads(path.read_text(encoding="utf-8"))["deck"], "architecture"
+            )
 
     def test_load_sidecar_returns_empty_structure_when_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

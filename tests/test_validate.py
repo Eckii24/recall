@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from recall.commands.validate import validate_decks
 from recall.commands.normalize import normalize_deck
+from recall.commands.validate import validate_decks
 
 
 def test_validate_single_deck_reports_errors_and_sidecar_orphans(tmp_path: Path):
@@ -12,7 +12,11 @@ def test_validate_single_deck_reports_errors_and_sidecar_orphans(tmp_path: Path)
     sidecar_path = decks_dir / "architecture.flashcards.json"
 
     deck_path.write_text(
-        "## What is CQRS? #flashcard\n<!-- recall:id=architecture-cqrs -->\n\nAnswer.\n\n## Empty #flashcard\n<!-- recall:id=architecture-empty -->\n",
+        "## What is CQRS? #flashcard\n"
+        "<!-- recall:id=architecture-cqrs -->\n\n"
+        "Answer.\n\n"
+        "## Empty #flashcard\n"
+        "<!-- recall:id=architecture-empty -->\n",
         encoding="utf-8",
     )
     sidecar_path.write_text(
@@ -35,7 +39,9 @@ def test_validate_single_deck_reports_errors_and_sidecar_orphans(tmp_path: Path)
     assert result.summary["decks"] == 1
     assert result.summary["cards"] == 2
     assert any(issue.code == "empty_answer" for issue in result.decks[0].issues)
-    assert result.decks[0].warnings == ["sidecar contains orphaned card state: architecture-old-card"]
+    assert result.decks[0].warnings == [
+        "sidecar contains orphaned card state: architecture-old-card"
+    ]
 
 
 def test_validate_all_decks_and_json_output(tmp_path: Path):
@@ -79,4 +85,6 @@ def test_normalize_deck_dry_run_and_write(tmp_path: Path):
 
     assert written.changed is True
     assert written.written is True
-    assert "<!-- recall:id=architecture-what-is-cqrs -->" in deck_path.read_text(encoding="utf-8")
+    assert "<!-- recall:id=architecture-what-is-cqrs -->" in deck_path.read_text(
+        encoding="utf-8"
+    )

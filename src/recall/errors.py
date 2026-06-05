@@ -26,12 +26,17 @@ class InvalidConfigError(RecallError):
 
 class DeckNotFoundError(RecallError):
     def __init__(self, deck: str) -> None:
-        super().__init__(message=f"Deck not found: {deck}", exit_code=ExitCode.DECK_NOT_FOUND)
+        super().__init__(
+            message=f"Deck not found: {deck}", exit_code=ExitCode.DECK_NOT_FOUND
+        )
 
 
 class CardNotFoundError(RecallError):
     def __init__(self, deck: str, card_id: str) -> None:
-        super().__init__(message=f"Card not found in deck {deck}: {card_id}", exit_code=ExitCode.CARD_NOT_FOUND)
+        super().__init__(
+            message=f"Card not found in deck {deck}: {card_id}",
+            exit_code=ExitCode.CARD_NOT_FOUND,
+        )
 
 
 class InvalidCardFormatError(RecallError):
@@ -46,7 +51,9 @@ class InvalidSidecarStateError(RecallError):
 
 class NoDueCardsError(RecallError):
     def __init__(self, deck: str) -> None:
-        super().__init__(message=f"No due cards for deck: {deck}", exit_code=ExitCode.NO_DUE_CARDS)
+        super().__init__(
+            message=f"No due cards for deck: {deck}", exit_code=ExitCode.NO_DUE_CARDS
+        )
 
 
 class WriteError(RecallError):

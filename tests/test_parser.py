@@ -36,7 +36,7 @@ This is not tagged.
     assert deck.issues == []
 
 
-def test_parse_auto_mode_uses_min_heading_level_and_ignores_yaml_frontmatter_and_fenced_code():
+def test_parse_auto_mode_uses_min_heading_level_and_ignores_frontmatter_and_code():
     markdown = """---
 title: Demo
 ---
@@ -63,7 +63,9 @@ Yes.
 Answer two.
 """
 
-    deck = parse_markdown_deck(markdown, deck_name="demo", auto_mode=True, min_heading_level=2)
+    deck = parse_markdown_deck(
+        markdown, deck_name="demo", auto_mode=True, min_heading_level=2
+    )
 
     assert [card.card_id for card in deck.cards] == [
         "demo-first-question",
@@ -127,21 +129,43 @@ Answer before id.
     assert any(issue.code == "missing_id" for issue in deck.issues)
 
 
-def test_normalize_dry_run_reports_missing_ids_and_write_inserts_deterministic_ids(tmp_path: Path):
+def test_normalize_dry_run_reports_missing_ids_and_write_inserts_deterministic_ids(
+    tmp_path: Path,
+):
     deck_path = tmp_path / "architecture.md"
     deck_path.write_text(
-        "# Architecture\n\n## What is CQRS? #flashcard\n\nAnswer.\n\n## What is CQRS? #flashcard\n\nAnother answer.\n",
+        "# Architecture\n\n"
+        "## What is CQRS? #flashcard\n\n"
+        "Answer.\n\n"
+        "## What is CQRS? #flashcard\n\n"
+        "Another answer.\n",
         encoding="utf-8",
     )
 
-    preview = normalize_deck_markdown(deck_path.read_text(encoding="utf-8"), deck_name="architecture", write=False)
+    preview = normalize_deck_markdown(
+        deck_path.read_text(encoding="utf-8"), deck_name="architecture", write=False
+    )
 
     assert preview.changed is True
-    assert preview.missing_ids == ["architecture-what-is-cqrs", "architecture-what-is-cqrs-2"]
+    assert preview.missing_ids == [
+        "architecture-what-is-cqrs",
+        "architecture-what-is-cqrs-2",
+    ]
     assert "recall:id=architecture-what-is-cqrs" in preview.content
-    assert deck_path.read_text(encoding="utf-8") == "# Architecture\n\n## What is CQRS? #flashcard\n\nAnswer.\n\n## What is CQRS? #flashcard\n\nAnother answer.\n"
+    assert (
+        deck_path.read_text(encoding="utf-8") == "# Architecture\n\n"
+        "## What is CQRS? #flashcard\n\n"
+        "Answer.\n\n"
+        "## What is CQRS? #flashcard\n\n"
+        "Another answer.\n"
+    )
 
-    written = normalize_deck_markdown(deck_path.read_text(encoding="utf-8"), deck_name="architecture", write=True, path=deck_path)
+    written = normalize_deck_markdown(
+        deck_path.read_text(encoding="utf-8"),
+        deck_name="architecture",
+        write=True,
+        path=deck_path,
+    )
 
     assert written.changed is True
     text = deck_path.read_text(encoding="utf-8")

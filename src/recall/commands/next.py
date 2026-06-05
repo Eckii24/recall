@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 import json
-import random
 from datetime import date
 from pathlib import Path
 
-from recall.errors import NoDueCardsError
-from recall.repository import load_deck, sidecar_path
-from recall.scheduler.sm2 import SM2Scheduler
-from recall.sidecar import load_sidecar
+from recall.application.learning import next_cards
 
 
 def run(
@@ -20,39 +16,21 @@ def run(
     shuffle: bool = False,
     today: date | None = None,
 ) -> str:
-    today = today or date.today()
-    scheduler = SM2Scheduler()
-    deck_data = load_deck(repo_root, deck)
-    sidecar = load_sidecar(sidecar_path(repo_root, deck), deck_name=deck)
-
-    due_cards: list[dict[str, object]] = []
-    for card in deck_data.cards:
-        state = sidecar["cards"].get(card.card_id, scheduler.new_card(today))
-        if scheduler.is_due(state, today):
-            item = {
-                "card_id": card.card_id,
-                "question": card.question,
-                "source": {"path": str(card.source_path.relative_to(repo_root)), "line": card.source_line},
-                "state": state.to_dict(),
-            }
-            if show_answer:
-                item["answer"] = card.answer
-            due_cards.append(item)
-
-    if shuffle:
-        random.Random().shuffle(due_cards)
-    due_cards = due_cards[:limit]
-
-    if not due_cards:
-        raise NoDueCardsError(deck)
-
+    result = next_cards(
+        repo_root=repo_root,
+        deck=deck,
+        limit=limit,
+        show_answer=show_answer,
+        shuffle=shuffle,
+        today=today,
+    )
     if output_format == "json":
-        return json.dumps({"deck": deck, "cards": due_cards}, sort_keys=True)
+        return json.dumps(result.to_dict(), sort_keys=True)
 
     lines: list[str] = []
-    for item in due_cards:
-        lines.append(f"[{item['card_id']}]")
-        lines.append(str(item["question"]))
-        if show_answer:
-            lines.append(str(item["answer"]))
+    for item in result.cards:
+        lines.append(f"[{item.card_id}]")
+        lines.append(item.question)
+        if show_answer and item.answer is not None:
+            lines.append(item.answer)
     return "\n".join(lines)

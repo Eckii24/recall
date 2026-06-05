@@ -17,7 +17,9 @@ def test_deck_create_uses_default_config_and_creates_files(tmp_path, monkeypatch
 
     assert result.exit_code == ExitCode.OK
     assert (tmp_path / "decks" / "architecture.md").read_text() == "# Architecture\n"
-    assert json.loads((tmp_path / "decks" / "architecture.flashcards.json").read_text()) == {
+    assert json.loads(
+        (tmp_path / "decks" / "architecture.flashcards.json").read_text()
+    ) == {
         "version": 1,
         "deck": "architecture",
         "cards": {},
@@ -60,7 +62,9 @@ def test_deck_create_returns_write_error_when_deck_exists(tmp_path, monkeypatch)
     decks_dir = tmp_path / "decks"
     decks_dir.mkdir()
     (decks_dir / "architecture.md").write_text("# Architecture\n")
-    (decks_dir / "architecture.flashcards.json").write_text('{"version": 1, "deck": "architecture", "cards": {}}')
+    (decks_dir / "architecture.flashcards.json").write_text(
+        '{"version": 1, "deck": "architecture", "cards": {}}'
+    )
 
     result = runner.invoke(app, ["deck", "create", "architecture"])
 
@@ -73,9 +77,18 @@ def test_deck_list_human_output_and_json_output(tmp_path, monkeypatch):
     decks_dir = tmp_path / "decks"
     decks_dir.mkdir()
     (decks_dir / "zeta.md").write_text("# Zeta\n")
-    (decks_dir / "alpha.md").write_text("# Alpha\n")
-    (decks_dir / "alpha.flashcards.json").write_text('{"version": 1, "deck": "alpha", "cards": {"one": {}}}')
-    (decks_dir / "zeta.flashcards.json").write_text('{"version": 1, "deck": "zeta", "cards": {}}')
+    (decks_dir / "alpha.md").write_text(
+        "# Alpha\n\n"
+        "## What is Alpha? #flashcard\n"
+        "<!-- recall:id=alpha-one -->\n\n"
+        "Alpha answer.\n"
+    )
+    (decks_dir / "alpha.flashcards.json").write_text(
+        '{"version": 1, "deck": "alpha", "cards": {"one": {}}}'
+    )
+    (decks_dir / "zeta.flashcards.json").write_text(
+        '{"version": 1, "deck": "zeta", "cards": {}}'
+    )
 
     text_result = runner.invoke(app, ["deck", "list"])
     json_result = runner.invoke(app, ["deck", "list", "--format", "json"])
