@@ -24,7 +24,7 @@ classifiers = [
 keywords = ["cli", "flashcards", "markdown", "spaced-repetition"]
 
 [project.scripts]
-recall = "recall.cli:main"
+recall = "recall.presentation.cli:main"
 
 [dependency-groups]
 dev = [

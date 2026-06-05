@@ -21,7 +21,7 @@ It keeps the source material in human-readable deck files and stores scheduling 
 │   ├── application/
 │   ├── domain/
 │   ├── infrastructure/
-│   ├── interfaces/
+│   ├── presentation/
 │   └── cli.py
 └── tests/
 ```
@@ -34,7 +34,7 @@ Key files:
 - `src/recall/domain/`: flashcard/review entities plus Markdown parsing and normalization
 - `src/recall/application/`: typed use cases for init, deck management, validation, and learning flows
 - `src/recall/infrastructure/`: filesystem adapters for config, decks, and sidecar persistence
-- `src/recall/interfaces/`: delivery adapters, currently the Typer CLI
+- `src/recall/presentation/`: delivery adapters, currently the Typer CLI
 - `src/recall/cli.py`: compatibility wrapper to the CLI entrypoint
 - `tests/`: CLI and behavior tests
 

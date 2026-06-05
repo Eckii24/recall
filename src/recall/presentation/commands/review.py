@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from recall.application.learning import review_card
-from recall.scheduler.base import Rating
+from recall.domain.scheduler.base import Rating
 
 
 def run(

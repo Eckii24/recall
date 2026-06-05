@@ -8,10 +8,10 @@ from typing import cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from recall.infrastructure.sidecar_store import SidecarData
-from recall.scheduler.base import CardState
-from recall.sidecar import (
+from recall.domain.scheduler.base import CardState
+from recall.infrastructure.sidecar_store import (
     SCHEMA_VERSION,
+    SidecarData,
     create_empty_sidecar,
     load_sidecar,
     save_sidecar,

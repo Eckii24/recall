@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from recall.scheduler.base import CardState, Rating
+from recall.domain.scheduler.base import CardState, Rating
 
 
 @dataclass(slots=True, frozen=True)

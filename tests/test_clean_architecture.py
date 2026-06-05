@@ -6,9 +6,8 @@ from pathlib import Path
 from recall.application import decks as deck_use_cases
 from recall.application import learning as learning_use_cases
 from recall.application import validation as validation_use_cases
-from recall.cli import app as legacy_app
-from recall.interfaces.cli import app as cli_app
-from recall.sidecar import load_sidecar
+from recall.infrastructure.sidecar_store import load_sidecar
+from recall.presentation.cli import app as cli_app
 
 TAGGED_DECK = """# Architecture
 
@@ -19,8 +18,25 @@ CQRS trennt Commands und Queries.
 """
 
 
-def test_cli_module_is_compatibility_wrapper() -> None:
-    assert legacy_app is cli_app
+def test_root_package_only_exposes_the_four_top_level_layers() -> None:
+    package_root = Path(__file__).resolve().parents[1] / "src" / "recall"
+    top_level_dirs = sorted(
+        path.name
+        for path in package_root.iterdir()
+        if path.is_dir() and not path.name.startswith("__")
+    )
+
+    assert top_level_dirs == ["application", "domain", "infrastructure", "presentation"]
+    assert not (package_root / "cli.py").exists()
+    assert not (package_root / "parser.py").exists()
+    assert not (package_root / "sidecar.py").exists()
+    assert not (package_root / "config.py").exists()
+    assert not (package_root / "models.py").exists()
+    assert not (package_root / "repository.py").exists()
+
+
+def test_cli_entrypoint_lives_in_presentation_layer() -> None:
+    assert cli_app.info.name == "recall"
 
 
 def test_application_deck_use_cases_return_typed_results(tmp_path: Path) -> None:

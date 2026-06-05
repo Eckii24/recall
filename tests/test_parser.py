@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from recall.parser import generate_card_id, normalize_deck_markdown, parse_markdown_deck
+from recall.domain.markdown import (
+    generate_card_id,
+    normalize_deck_markdown,
+    parse_markdown_deck,
+)
 
 
 def test_parse_tagged_mode_extracts_heading_based_cards_with_explicit_ids():

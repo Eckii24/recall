@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, cast
 
-from recall.errors import InvalidConfigError
+from recall.domain.errors import InvalidConfigError
 
 CONFIG_FILE_NAME = "recall.config.json"
 

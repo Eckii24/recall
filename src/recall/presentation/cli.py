@@ -19,12 +19,16 @@ from recall.domain.entities import (
     StatsResult,
     ValidationSummary,
 )
-from recall.errors import InvalidArgumentsError, InvalidCardFormatError, RecallError
-from recall.exit_codes import ExitCode
-from recall.output import emit, emit_error
-from recall.scheduler.base import Rating
+from recall.domain.errors import (
+    InvalidArgumentsError,
+    InvalidCardFormatError,
+    RecallError,
+)
+from recall.domain.scheduler.base import Rating
+from recall.presentation.exit_codes import ExitCode
+from recall.presentation.output import emit, emit_error
 
-app = typer.Typer(help="Headless markdown spaced repetition CLI")
+app = typer.Typer(name="recall", help="Headless markdown spaced repetition CLI")
 deck_app = typer.Typer(help="Deck management commands")
 app.add_typer(deck_app, name="deck")
 
@@ -37,6 +41,35 @@ class OutputFormat(str):
     JSON = "json"
 
 
+def _exit_code_for_error(error: RecallError) -> ExitCode:
+    if isinstance(error, InvalidArgumentsError):
+        return ExitCode.INVALID_ARGUMENTS
+    if isinstance(error, InvalidCardFormatError):
+        return ExitCode.INVALID_CARD_FORMAT
+    from recall.domain.errors import (
+        CardNotFoundError,
+        DeckNotFoundError,
+        InvalidConfigError,
+        InvalidSidecarStateError,
+        NoDueCardsError,
+        WriteError,
+    )
+
+    if isinstance(error, InvalidConfigError):
+        return ExitCode.INVALID_CONFIG
+    if isinstance(error, DeckNotFoundError):
+        return ExitCode.DECK_NOT_FOUND
+    if isinstance(error, CardNotFoundError):
+        return ExitCode.CARD_NOT_FOUND
+    if isinstance(error, InvalidSidecarStateError):
+        return ExitCode.INVALID_SIDECAR_STATE
+    if isinstance(error, NoDueCardsError):
+        return ExitCode.NO_DUE_CARDS
+    if isinstance(error, WriteError):
+        return ExitCode.WRITE_ERROR
+    return ExitCode.ERROR
+
+
 def command_handler(func: Callable[P, T]) -> Callable[P, T]:
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -44,7 +77,7 @@ def command_handler(func: Callable[P, T]) -> Callable[P, T]:
             return func(*args, **kwargs)
         except RecallError as exc:
             emit_error(str(exc))
-            raise typer.Exit(code=int(exc.exit_code)) from exc
+            raise typer.Exit(code=int(_exit_code_for_error(exc))) from exc
 
     return wrapper
 

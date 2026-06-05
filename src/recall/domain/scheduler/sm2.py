@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from math import ceil
 
-from recall.scheduler.base import CardState, Rating, Scheduler
+from recall.domain.scheduler.base import CardState, Rating, Scheduler
 
 RATING_TO_QUALITY: dict[Rating, int] = {
     "again": 0,

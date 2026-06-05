@@ -7,12 +7,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from recall.commands.next import run as next_run
-from recall.commands.review import run as review_run
-from recall.commands.scan import run as scan_run
-from recall.commands.stats import run as stats_run
-from recall.scheduler.base import CardState
-from recall.sidecar import save_sidecar
+from recall.domain.scheduler.base import CardState
+from recall.infrastructure.sidecar_store import save_sidecar
+from recall.presentation.commands.next import run as next_run
+from recall.presentation.commands.review import run as review_run
+from recall.presentation.commands.scan import run as scan_run
+from recall.presentation.commands.stats import run as stats_run
 
 DECK_CONTENT = """# Architecture
 

@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from recall.scheduler.base import CardState
-from recall.scheduler.sm2 import SM2Scheduler, rating_to_quality
+from recall.domain.scheduler.base import CardState
+from recall.domain.scheduler.sm2 import SM2Scheduler, rating_to_quality
 
 
 class SM2SchedulerTests(unittest.TestCase):

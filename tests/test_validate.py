@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from recall.commands.normalize import normalize_deck
-from recall.commands.validate import validate_decks
+from recall.presentation.commands.normalize import normalize_deck
+from recall.presentation.commands.validate import validate_decks
 
 
 def test_validate_single_deck_reports_errors_and_sidecar_orphans(tmp_path: Path):

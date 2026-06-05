@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 from typing import SupportsFloat, SupportsInt, TypedDict, cast
 
-from recall.scheduler.base import CardState
+from recall.domain.scheduler.base import CardState
 
 SCHEMA_VERSION = 1
 

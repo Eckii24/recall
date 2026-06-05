@@ -5,8 +5,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from recall.cli import app
-from recall.exit_codes import ExitCode
+from recall.presentation.cli import app
+from recall.presentation.exit_codes import ExitCode
 
 runner = CliRunner()
 
