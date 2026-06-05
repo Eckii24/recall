@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "recall"
+version = "0.1.0"
+description = "Headless markdown spaced repetition CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "typer>=0.16,<1.0",
+]
+
+[project.scripts]
+recall = "recall.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/recall"]

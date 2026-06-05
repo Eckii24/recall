@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "decks_dir": "decks",
+  "default_auto_mode": false,
+  "default_min_heading_level": 2,
+  "sidecar_suffix": ".flashcards.json",
+  "scheduler": "sm2"
+}
