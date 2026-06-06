@@ -80,15 +80,46 @@ class DeckValidationResult:
 
 
 @dataclass(slots=True)
-class ValidationSummary:
-    decks: list[DeckValidationResult]
+class CollectionValidationResult:
+    name: str
+    include: list[str]
+    exclude: list[str]
+    files: list[DeckValidationResult] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
-        return all(deck.ok for deck in self.decks)
+        return all(file.ok for file in self.files)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "include": list(self.include),
+            "exclude": list(self.exclude),
+            "files": [file.to_dict() for file in self.files],
+            "ok": self.ok,
+        }
+
+
+@dataclass(slots=True)
+class ValidationSummary:
+    decks: list[DeckValidationResult]
+    collection: CollectionValidationResult | None = None
+
+    @property
+    def ok(self) -> bool:
+        decks_ok = all(deck.ok for deck in self.decks)
+        collection_ok = self.collection.ok if self.collection is not None else True
+        return decks_ok and collection_ok
 
     @property
     def summary(self) -> dict[str, int]:
+        if self.collection is not None:
+            return {
+                "decks": len(self.collection.files),
+                "cards": sum(len(deck.cards) for deck in self.collection.files),
+                "errors": sum(len(deck.issues) for deck in self.collection.files),
+                "warnings": sum(len(deck.warnings) for deck in self.collection.files),
+            }
         return {
             "decks": len(self.decks),
             "cards": sum(len(deck.cards) for deck in self.decks),
@@ -97,11 +128,14 @@ class ValidationSummary:
         }
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "ok": self.ok,
             "summary": self.summary,
             "decks": [deck.to_dict() for deck in self.decks],
         }
+        if self.collection is not None:
+            payload["collection"] = self.collection.to_dict()
+        return payload
 
 
 @dataclass(slots=True, frozen=True)
@@ -117,6 +151,15 @@ class Card:
 class Deck:
     name: str
     path: Path
+    cards: list[Card]
+
+
+@dataclass(slots=True, frozen=True)
+class Collection:
+    name: str
+    include: list[str]
+    exclude: list[str]
+    files: list[Path]
     cards: list[Card]
 
 
@@ -142,19 +185,55 @@ class DeckListItem:
 
 
 @dataclass(slots=True, frozen=True)
+class CollectionListItem:
+    name: str
+    include: list[str]
+    exclude: list[str]
+    file_count: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "include": list(self.include),
+            "exclude": list(self.exclude),
+            "file_count": self.file_count,
+        }
+
+
+@dataclass(slots=True, frozen=True)
+class CollectionDetails:
+    name: str
+    include: list[str]
+    exclude: list[str]
+    files: list[Path]
+
+    def to_dict(self, repo_root: Path) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "include": list(self.include),
+            "exclude": list(self.exclude),
+            "files": [path.relative_to(repo_root).as_posix() for path in self.files],
+        }
+
+
+@dataclass(slots=True, frozen=True)
 class ScanResult:
     decks_scanned: int
     cards_total: int
     cards_due: int
     errors: list[str]
+    collection: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "decks_scanned": self.decks_scanned,
             "cards_total": self.cards_total,
             "cards_due": self.cards_due,
             "errors": list(self.errors),
         }
+        if self.collection is not None:
+            payload["collection"] = self.collection
+        return payload
 
 
 @dataclass(slots=True, frozen=True)
@@ -188,29 +267,40 @@ class DueCard:
 
 @dataclass(slots=True, frozen=True)
 class NextCardsResult:
-    deck: str
     cards: list[DueCard]
+    deck: str | None = None
+    collection: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {"deck": self.deck, "cards": [card.to_dict() for card in self.cards]}
+        payload: dict[str, Any] = {"cards": [card.to_dict() for card in self.cards]}
+        if self.deck is not None:
+            payload["deck"] = self.deck
+        if self.collection is not None:
+            payload["collection"] = self.collection
+        return payload
 
 
 @dataclass(slots=True, frozen=True)
 class ReviewResult:
-    deck: str
     card_id: str
     rating: Rating
     old_state: CardState
     new_state: CardState
+    deck: str | None = None
+    collection: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "deck": self.deck,
+        payload: dict[str, Any] = {
             "card_id": self.card_id,
             "rating": self.rating,
             "old_state": self.old_state.to_dict(),
             "new_state": self.new_state.to_dict(),
         }
+        if self.deck is not None:
+            payload["deck"] = self.deck
+        if self.collection is not None:
+            payload["collection"] = self.collection
+        return payload
 
 
 @dataclass(slots=True, frozen=True)
@@ -221,6 +311,7 @@ class StatsResult:
     young: int
     mature: int
     deck: str | None = None
+    collection: str | None = None
     decks: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -233,6 +324,8 @@ class StatsResult:
         }
         if self.deck is not None:
             payload["deck"] = self.deck
+        if self.collection is not None:
+            payload["collection"] = self.collection
         if self.decks is not None:
             payload["decks"] = self.decks
         return payload
