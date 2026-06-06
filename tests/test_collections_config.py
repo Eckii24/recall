@@ -37,13 +37,26 @@ def test_validate_config_accepts_version_2_with_collections() -> None:
 @pytest.mark.parametrize(
     ("raw", "message"),
     [
-        ({"version": 1, "collections": {"chess": {"include": ["chess/**/*.md"]}}}, "version 2"),
+        (
+            {"version": 1, "collections": {"chess": {"include": ["chess/**/*.md"]}}},
+            "version 2",
+        ),
         ({"version": 2, "collections": {"chess": {}}}, "include"),
         ({"version": 2, "collections": {"chess": {"include": []}}}, "include"),
         ({"version": 2, "collections": {"chess": {"include": [1]}}}, "include"),
-        ({"version": 2, "collections": {"chess": {"include": ["chess/**/*.md"], "exclude": [1]}}}, "exclude"),
+        (
+            {
+                "version": 2,
+                "collections": {
+                    "chess": {"include": ["chess/**/*.md"], "exclude": [1]}
+                },
+            },
+            "exclude",
+        ),
     ],
 )
-def test_validate_config_rejects_invalid_collection_shapes(raw: dict, message: str) -> None:
+def test_validate_config_rejects_invalid_collection_shapes(
+    raw: dict, message: str
+) -> None:
     with pytest.raises(InvalidConfigError, match=message):
         validate_config(raw)

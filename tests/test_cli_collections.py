@@ -56,7 +56,9 @@ def test_collection_list_and_show_json(tmp_path: Path, monkeypatch) -> None:
     _write_collection_repo(tmp_path)
 
     list_result = runner.invoke(app, ["collection", "list", "--format", "json"])
-    show_result = runner.invoke(app, ["collection", "show", "chess", "--format", "json"])
+    show_result = runner.invoke(
+        app, ["collection", "show", "chess", "--format", "json"]
+    )
 
     assert list_result.exit_code == ExitCode.OK
     assert json.loads(list_result.stdout) == {
@@ -89,7 +91,9 @@ def test_collection_commands_end_to_end_and_ambiguous_scope_errors(
     validate_result = runner.invoke(
         app, ["validate", "--collection", "chess", "--format", "json"]
     )
-    scan_result = runner.invoke(app, ["scan", "--collection", "chess", "--format", "json"])
+    scan_result = runner.invoke(
+        app, ["scan", "--collection", "chess", "--format", "json"]
+    )
     next_result = runner.invoke(
         app,
         [
@@ -159,7 +163,9 @@ def test_collection_commands_end_to_end_and_ambiguous_scope_errors(
         )
     )
     assert sidecar_payload["collection"] == "chess"
-    assert sidecar_payload["cards"]["chess-plan"]["state"] == review_payload["new_state"]
+    assert (
+        sidecar_payload["cards"]["chess-plan"]["state"] == review_payload["new_state"]
+    )
     assert sidecar_payload["cards"]["chess-plan"]["source_path"] == "chess/game1.md"
 
     stats_result = runner.invoke(
@@ -177,14 +183,19 @@ def test_collection_commands_end_to_end_and_ambiguous_scope_errors(
 
     ambiguous = runner.invoke(app, ["scan", "--deck", "x", "--collection", "chess"])
     assert ambiguous.exit_code == ExitCode.INVALID_ARGUMENTS
-    assert "exactly one" in ambiguous.stderr.lower() or "cannot use both" in ambiguous.stderr.lower()
+    assert (
+        "exactly one" in ambiguous.stderr.lower()
+        or "cannot use both" in ambiguous.stderr.lower()
+    )
 
     missing_scope = runner.invoke(app, ["next", "--format", "json"])
     assert missing_scope.exit_code == ExitCode.INVALID_ARGUMENTS
     assert "exactly one" in missing_scope.stderr.lower()
 
 
-def test_validate_collection_rejects_duplicate_ids_across_files(tmp_path: Path, monkeypatch) -> None:
+def test_validate_collection_rejects_duplicate_ids_across_files(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     _write_collection_repo(tmp_path)
     (tmp_path / "chess" / "openings" / "game2.md").write_text(
@@ -216,13 +227,21 @@ def test_validate_collection_rejects_duplicate_ids_across_files(tmp_path: Path, 
         encoding="utf-8",
     )
 
-    result = runner.invoke(app, ["validate", "--collection", "chess", "--format", "json"])
+    result = runner.invoke(
+        app, ["validate", "--collection", "chess", "--format", "json"]
+    )
 
     assert result.exit_code == ExitCode.INVALID_CARD_FORMAT
     payload = json.loads(result.stdout)
     assert payload["ok"] is False
     assert payload["collection"]["name"] == "chess"
-    issues = [issue for file in payload["collection"]["files"] for issue in file["issues"]]
+    issues = [
+        issue for file in payload["collection"]["files"] for issue in file["issues"]
+    ]
     assert any(issue["code"] == "duplicate_id" for issue in issues)
-    warnings = [warning for file in payload["collection"]["files"] for warning in file["warnings"]]
+    warnings = [
+        warning
+        for file in payload["collection"]["files"]
+        for warning in file["warnings"]
+    ]
     assert warnings == ["sidecar contains orphaned card state: orphan-card"]

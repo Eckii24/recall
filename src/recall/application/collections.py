@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from recall.domain.entities import CollectionDetails, CollectionListItem
-from recall.infrastructure.collection_store import get_collection_details, list_collections
+from recall.infrastructure.collection_store import (
+    get_collection_details,
+    list_collections,
+)
 
 
 def list_collection_items(base_path: Path) -> list[CollectionListItem]:

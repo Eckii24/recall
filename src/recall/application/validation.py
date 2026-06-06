@@ -61,7 +61,9 @@ def validate_decks(
     root_path = Path(root)
     if collection is not None:
         details = get_collection_details(root_path, collection)
-        results = [_validate_deck_path(root_path, deck_path) for deck_path in details.files]
+        results = [
+            _validate_deck_path(root_path, deck_path) for deck_path in details.files
+        ]
         duplicates = Counter(
             card.card_id for result in results for card in result.cards if card.card_id
         )
@@ -71,7 +73,9 @@ def validate_decks(
                     result.issues.append(
                         ParseIssue(
                             code="duplicate_id",
-                            message=f"Duplicate card id across collection: {card.card_id}",
+                            message=(
+                                f"Duplicate card id across collection: {card.card_id}"
+                            ),
                             line=card.line,
                         )
                     )

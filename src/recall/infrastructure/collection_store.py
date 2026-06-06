@@ -74,7 +74,9 @@ def list_collections(repo_root: Path) -> list[CollectionListItem]:
     results: list[CollectionListItem] = []
     for name in sorted(config.collections):
         collection = config.collections[name]
-        files = _resolve_collection_files(repo_root, collection.include, collection.exclude)
+        files = _resolve_collection_files(
+            repo_root, collection.include, collection.exclude
+        )
         results.append(
             CollectionListItem(
                 name=name,

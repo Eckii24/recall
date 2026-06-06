@@ -47,11 +47,15 @@ def config_path(base_path: Path | None = None) -> Path:
 
 
 def _validate_string_list(values: object, field_name: str) -> list[str]:
-    if not isinstance(values, list) or not values or not all(
-        isinstance(value, str) and value for value in values
+    if (
+        not isinstance(values, list)
+        or not values
+        or not all(isinstance(value, str) and value for value in values)
     ):
-        raise InvalidConfigError(f"Invalid configuration: {field_name} must be a non-empty list of strings")
-    return list(values)
+        raise InvalidConfigError(
+            f"Invalid configuration: {field_name} must be a non-empty list of strings"
+        )
+    return cast(list[str], list(values))
 
 
 def _validate_optional_string_list(values: object, field_name: str) -> list[str]:
@@ -60,8 +64,10 @@ def _validate_optional_string_list(values: object, field_name: str) -> list[str]
     if not isinstance(values, list) or not all(
         isinstance(value, str) and value for value in values
     ):
-        raise InvalidConfigError(f"Invalid configuration: {field_name} must be a list of strings")
-    return list(values)
+        raise InvalidConfigError(
+            f"Invalid configuration: {field_name} must be a list of strings"
+        )
+    return cast(list[str], list(values))
 
 
 def _validate_collections(raw: object) -> dict[str, CollectionConfig]:
@@ -73,13 +79,16 @@ def _validate_collections(raw: object) -> dict[str, CollectionConfig]:
     collections: dict[str, CollectionConfig] = {}
     for name, payload in raw.items():
         if not isinstance(name, str) or not name:
-            raise InvalidConfigError("Invalid configuration: collection names must be non-empty strings")
+            raise InvalidConfigError(
+                "Invalid configuration: collection names must be non-empty strings"
+            )
         if not isinstance(payload, dict):
             raise InvalidConfigError(
                 f"Invalid configuration: collection {name} must be an object"
             )
-        include = _validate_string_list(payload.get("include"), "include")
-        exclude = _validate_optional_string_list(payload.get("exclude"), "exclude")
+        payload_dict = cast(dict[str, object], payload)
+        include = _validate_string_list(payload_dict.get("include"), "include")
+        exclude = _validate_optional_string_list(payload_dict.get("exclude"), "exclude")
         collections[name] = CollectionConfig(include=include, exclude=exclude)
     return collections
 
@@ -111,9 +120,7 @@ def validate_config(raw: object) -> Config:
 
     collections = _validate_collections(merged.get("collections"))
     if collections and version != 2:
-        raise InvalidConfigError(
-            "Invalid configuration: collections require version 2"
-        )
+        raise InvalidConfigError("Invalid configuration: collections require version 2")
 
     return Config(
         version=version,

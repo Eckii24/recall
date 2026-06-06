@@ -30,6 +30,7 @@ Key files:
 
 - `decks/*.md`: Markdown deck sources
 - `decks/*.flashcards.json`: per-deck review state sidecars
+- `.recall/collections/*.flashcards.json`: per-collection review state sidecars
 - `recall.config.json`: project configuration
 - `src/recall/domain/`: flashcard/review entities plus Markdown parsing and normalization
 - `src/recall/application/`: typed use cases for init, deck management, validation, and learning flows
@@ -126,6 +127,55 @@ Show stats:
 uv run recall stats --deck architecture
 ```
 
+## Collections
+
+Collections are explicit named *multi-file* review scopes. They do not replace decks.
+
+- `deck` still means one Markdown file
+- `collection` means a configured set of Markdown files resolved from globs
+- collection review state is stored separately from deck review state
+
+Example `recall.config.json`:
+
+```json
+{
+  "version": 2,
+  "decks_dir": "decks",
+  "collections": {
+    "chess": {
+      "include": ["chess/**/*.md"],
+      "exclude": ["**/templates/**"]
+    }
+  }
+}
+```
+
+Inspect configured collections:
+
+```bash
+uv run recall collection list
+uv run recall collection show chess
+```
+
+Validate, scan, review, and inspect due cards across all files in a collection:
+
+```bash
+uv run recall validate --collection chess
+uv run recall scan --collection chess
+uv run recall next --collection chess --show-answer
+uv run recall review --collection chess --card-id chess-plan --rating good
+uv run recall stats --collection chess
+```
+
+Notes:
+
+- collection files are resolved from repo-relative `include` globs
+- `exclude` is optional
+- `next` and `review` require exactly one of `--deck` or `--collection`
+- `validate`, `scan`, and `stats` accept `--deck`, `--collection`, or neither
+- `normalize` is still deck-only
+- duplicate `recall:id` values inside one collection are validation errors
+
 ## Deck format
 
 A flashcard is defined by:
@@ -156,19 +206,39 @@ Notes:
 Project configuration lives in `recall.config.json`.
 Current supported keys are:
 
-- `version`: config schema version, currently `1`
+- `version`: config schema version, `1` for deck-only configs or `2` when using collections
 - `decks_dir`: directory containing Markdown decks
 - `default_auto_mode`: when `true`, headings at or below `default_min_heading_level` become cards without needing `#flashcard`
 - `default_min_heading_level`: minimum heading depth used in auto mode
 - `sidecar_suffix`: suffix for per-deck scheduling state files
 - `scheduler`: scheduler name, currently `sm2`
+- `collections`: optional map of named multi-file scopes with `include` and optional `exclude` globs
 
-Example:
+Deck-only example:
 
 ```json
 {
   "version": 1,
   "decks_dir": "decks",
+  "default_auto_mode": false,
+  "default_min_heading_level": 2,
+  "sidecar_suffix": ".flashcards.json",
+  "scheduler": "sm2"
+}
+```
+
+Collection-enabled example:
+
+```json
+{
+  "version": 2,
+  "decks_dir": "decks",
+  "collections": {
+    "chess": {
+      "include": ["chess/**/*.md"],
+      "exclude": ["**/templates/**"]
+    }
+  },
   "default_auto_mode": false,
   "default_min_heading_level": 2,
   "sidecar_suffix": ".flashcards.json",
@@ -183,18 +253,21 @@ Main commands:
 - `uv run recall init [--decks-dir <path>]`
 - `uv run recall deck create <name>`
 - `uv run recall deck list [--format text|json]`
-- `uv run recall validate [--deck <name>] [--format text|json]`
+- `uv run recall collection list [--format text|json]`
+- `uv run recall collection show <name> [--format text|json]`
+- `uv run recall validate [--deck <name>] [--collection <name>] [--format text|json]`
 - `uv run recall normalize --deck <name> [--write]`
-- `uv run recall scan [--deck <name>] [--format text|json]`
-- `uv run recall next --deck <name> [--limit N] [--show-answer] [--shuffle] [--format text|json]`
-- `uv run recall review --deck <name> --card-id <id> --rating again|hard|good|easy [--format text|json]`
-- `uv run recall stats [--deck <name>] [--format text|json]`
+- `uv run recall scan [--deck <name>] [--collection <name>] [--format text|json]`
+- `uv run recall next (--deck <name> | --collection <name>) [--limit N] [--show-answer] [--shuffle] [--format text|json]`
+- `uv run recall review (--deck <name> | --collection <name>) --card-id <id> --rating again|hard|good|easy [--format text|json]`
+- `uv run recall stats [--deck <name>] [--collection <name>] [--format text|json]`
 
 Useful machine-readable workflows:
 
 ```bash
 uv run recall scan --deck architecture --format json
 uv run recall next --deck architecture --format json
+uv run recall next --collection chess --format json
 uv run recall stats --format json
 ```
 

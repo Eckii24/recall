@@ -29,9 +29,21 @@ from recall.domain.scheduler.base import Rating
 from recall.presentation.exit_codes import ExitCode
 from recall.presentation.output import emit, emit_error
 
-app = typer.Typer(name="recall", help="Headless markdown spaced repetition CLI")
-deck_app = typer.Typer(help="Deck management commands")
-collection_app = typer.Typer(help="Collection management commands")
+app = typer.Typer(
+    name="recall",
+    help=(
+        "Markdown-based spaced repetition CLI. "
+        "Use deck commands for single-file review scopes and collection commands "
+        "for explicit multi-file scopes."
+    ),
+)
+deck_app = typer.Typer(help="Manage single Markdown decks: create and list deck files.")
+collection_app = typer.Typer(
+    help=(
+        "Inspect configured collections: named multi-file scopes resolved from "
+        "include/exclude globs in recall.config.json."
+    )
+)
 app.add_typer(deck_app, name="deck")
 app.add_typer(collection_app, name="collection")
 
@@ -96,7 +108,9 @@ def _resolve_scope(
     require_one: bool,
 ) -> None:
     if deck is not None and collection is not None:
-        raise InvalidArgumentsError("Cannot use both --deck and --collection; choose exactly one")
+        raise InvalidArgumentsError(
+            "Cannot use both --deck and --collection; choose exactly one"
+        )
     if require_one and deck is None and collection is None:
         raise InvalidArgumentsError("Exactly one of --deck or --collection is required")
 
@@ -153,10 +167,12 @@ def _emit_scan_result(result: ScanResult, output_format: str) -> None:
     if output_format == OutputFormat.JSON:
         _emit_json(result.to_dict())
     else:
-        scope = f"collection {result.collection}" if result.collection else f"{result.decks_scanned} decks"
-        emit(
-            f"Scanned {scope}, {result.cards_total} cards, {result.cards_due} due."
+        scope = (
+            f"collection {result.collection}"
+            if result.collection
+            else f"{result.decks_scanned} decks"
         )
+        emit(f"Scanned {scope}, {result.cards_total} cards, {result.cards_due} due.")
 
 
 def _emit_next_result(
@@ -190,14 +206,30 @@ def _emit_stats_result(result: StatsResult, output_format: str) -> None:
 
 @app.command("init")
 @command_handler
-def init_command(decks_dir: str = typer.Option(None, "--decks-dir")) -> None:
+def init_command(
+    decks_dir: str = typer.Option(
+        None,
+        "--decks-dir",
+        help=(
+            "Directory to create for Markdown deck files. "
+            "Defaults to the project standard."
+        ),
+    ),
+) -> None:
+    """Initialize a recall project in the current directory."""
     config = initialize_project(base_path=Path.cwd(), decks_dir=decks_dir)
     emit(f"Initialized recall project in ./{config.decks_dir}")
 
 
 @deck_app.command("create")
 @command_handler
-def deck_create_command(name: str) -> None:
+def deck_create_command(
+    name: str = typer.Argument(
+        ...,
+        help=("Deck name. Creates <decks_dir>/<name>.md using the repo naming rules."),
+    ),
+) -> None:
+    """Create a new empty deck Markdown file."""
     create_deck(Path.cwd(), name)
     emit(f"Created deck {name}")
 
@@ -205,8 +237,13 @@ def deck_create_command(name: str) -> None:
 @deck_app.command("list")
 @command_handler
 def deck_list_command(
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """List all discovered decks and their card counts."""
     decks = list_decks(Path.cwd())
     if output_format == OutputFormat.JSON:
         _emit_json({"decks": [deck.to_dict() for deck in decks]})
@@ -217,8 +254,13 @@ def deck_list_command(
 @collection_app.command("list")
 @command_handler
 def collection_list_command(
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """List configured collections from recall.config.json."""
     collections = list_collection_items(Path.cwd())
     if output_format == OutputFormat.JSON:
         _emit_json({"collections": [item.to_dict() for item in collections]})
@@ -229,9 +271,16 @@ def collection_list_command(
 @collection_app.command("show")
 @command_handler
 def collection_show_command(
-    name: str,
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    name: str = typer.Argument(
+        ..., help="Collection name as defined in recall.config.json."
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """Show one collection with resolved files and configured globs."""
     details = show_collection(Path.cwd(), name)
     if output_format == OutputFormat.JSON:
         _emit_json({"collection": details.to_dict(Path.cwd())})
@@ -249,10 +298,23 @@ def collection_show_command(
 @app.command("validate")
 @command_handler
 def validate_command(
-    deck: str | None = typer.Option(None, "--deck"),
-    collection: str | None = typer.Option(None, "--collection"),
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    deck: str | None = typer.Option(
+        None,
+        "--deck",
+        help="Validate one deck by name. Mutually exclusive with --collection.",
+    ),
+    collection: str | None = typer.Option(
+        None,
+        "--collection",
+        help="Validate one configured collection. Mutually exclusive with --deck.",
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """Validate all decks, one deck, or one collection for card-format problems."""
     _resolve_scope(deck, collection, require_one=False)
     summary = validate_decks(root=Path.cwd(), deck=deck, collection=collection)
     _emit_validation(summary, output_format)
@@ -263,9 +325,20 @@ def validate_command(
 @app.command("normalize")
 @command_handler
 def normalize_command(
-    deck: str = typer.Option(..., "--deck"),
-    write: bool = typer.Option(False, "--write"),
+    deck: str = typer.Option(
+        ...,
+        "--deck",
+        help="Deck name to normalize. Collections are not supported here.",
+    ),
+    write: bool = typer.Option(
+        False,
+        "--write",
+        help=(
+            "Persist inserted recall:id comments instead of showing a dry-run summary."
+        ),
+    ),
 ) -> None:
+    """Insert missing recall:id comments into a single deck."""
     result = normalize_deck(root=Path.cwd(), deck=deck, write=write)
     if result.changed:
         action = "Wrote" if result.written else "Would write"
@@ -280,10 +353,23 @@ def normalize_command(
 @app.command("scan")
 @command_handler
 def scan_command(
-    deck: str | None = typer.Option(None, "--deck"),
-    collection: str | None = typer.Option(None, "--collection"),
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    deck: str | None = typer.Option(
+        None,
+        "--deck",
+        help="Scan one deck by name. Mutually exclusive with --collection.",
+    ),
+    collection: str | None = typer.Option(
+        None,
+        "--collection",
+        help="Scan one configured collection. Mutually exclusive with --deck.",
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """Count cards and due cards for all decks, one deck, or one collection."""
     _resolve_scope(deck, collection, require_one=False)
     result = scan(repo_root=Path.cwd(), deck=deck, collection=collection)
     _emit_scan_result(result, output_format)
@@ -292,13 +378,38 @@ def scan_command(
 @app.command("next")
 @command_handler
 def next_command(
-    deck: str | None = typer.Option(None, "--deck"),
-    collection: str | None = typer.Option(None, "--collection"),
-    limit: int = typer.Option(1, "--limit"),
-    show_answer: bool = typer.Option(False, "--show-answer"),
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
-    shuffle: bool = typer.Option(False, "--shuffle"),
+    deck: str | None = typer.Option(
+        None,
+        "--deck",
+        help="Review scope: one deck by name. Required unless --collection is set.",
+    ),
+    collection: str | None = typer.Option(
+        None,
+        "--collection",
+        help="Review scope: one configured collection. Required unless --deck is set.",
+    ),
+    limit: int = typer.Option(
+        1,
+        "--limit",
+        help="Maximum number of due cards to return.",
+    ),
+    show_answer: bool = typer.Option(
+        False,
+        "--show-answer",
+        help="Include answers in text output and JSON payloads.",
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
+    shuffle: bool = typer.Option(
+        False,
+        "--shuffle",
+        help="Shuffle due cards before truncating to --limit.",
+    ),
 ) -> None:
+    """Show the next due cards for a deck or collection."""
     _resolve_scope(deck, collection, require_one=True)
     result = next_cards(
         repo_root=Path.cwd(),
@@ -314,12 +425,33 @@ def next_command(
 @app.command("review")
 @command_handler
 def review_command(
-    deck: str | None = typer.Option(None, "--deck"),
-    collection: str | None = typer.Option(None, "--collection"),
-    card_id: str = typer.Option(..., "--card-id"),
-    rating: str = typer.Option(..., "--rating"),
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    deck: str | None = typer.Option(
+        None,
+        "--deck",
+        help="Review scope: one deck by name. Required unless --collection is set.",
+    ),
+    collection: str | None = typer.Option(
+        None,
+        "--collection",
+        help="Review scope: one configured collection. Required unless --deck is set.",
+    ),
+    card_id: str = typer.Option(
+        ...,
+        "--card-id",
+        help="Card identifier to update after grading a review.",
+    ),
+    rating: str = typer.Option(
+        ...,
+        "--rating",
+        help="Scheduler rating: again, hard, good, or easy.",
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """Record a review grade for one card in a deck or collection."""
     _resolve_scope(deck, collection, require_one=True)
     valid_ratings = {"again", "hard", "good", "easy"}
     if rating not in valid_ratings:
@@ -337,10 +469,25 @@ def review_command(
 @app.command("stats")
 @command_handler
 def stats_command(
-    deck: str | None = typer.Option(None, "--deck"),
-    collection: str | None = typer.Option(None, "--collection"),
-    output_format: str = typer.Option(OutputFormat.TEXT, "--format"),
+    deck: str | None = typer.Option(
+        None,
+        "--deck",
+        help="Show stats for one deck by name. Mutually exclusive with --collection.",
+    ),
+    collection: str | None = typer.Option(
+        None,
+        "--collection",
+        help=(
+            "Show stats for one configured collection. Mutually exclusive with --deck."
+        ),
+    ),
+    output_format: str = typer.Option(
+        OutputFormat.TEXT,
+        "--format",
+        help="Output format: text for humans, json for scripts.",
+    ),
 ) -> None:
+    """Show aggregated review counts for all decks, one deck, or one collection."""
     _resolve_scope(deck, collection, require_one=False)
     result = stats(repo_root=Path.cwd(), deck=deck, collection=collection)
     _emit_stats_result(result, output_format)

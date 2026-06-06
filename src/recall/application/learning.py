@@ -16,7 +16,10 @@ from recall.domain.entities import (
 from recall.domain.errors import CardNotFoundError, NoDueCardsError
 from recall.domain.scheduler.base import CardState, Rating
 from recall.domain.scheduler.sm2 import SM2Scheduler
-from recall.infrastructure.collection_store import collection_sidecar_path, load_collection
+from recall.infrastructure.collection_store import (
+    collection_sidecar_path,
+    load_collection,
+)
 from recall.infrastructure.deck_store import load_all_decks, load_deck, sidecar_path
 from recall.infrastructure.sidecar_store import (
     create_empty_collection_sidecar,
@@ -38,7 +41,8 @@ def _collection_card_state(
     today: date,
 ) -> tuple[CardState, str]:
     sidecar = load_collection_sidecar(
-        collection_sidecar_path(repo_root, collection_name), collection_name=collection_name
+        collection_sidecar_path(repo_root, collection_name),
+        collection_name=collection_name,
     )
     entry = sidecar["cards"].get(card.card_id)
     if entry is None:
@@ -111,7 +115,8 @@ def next_cards(
     if collection is not None:
         loaded = load_collection(repo_root, collection)
         sidecar = load_collection_sidecar(
-            collection_sidecar_path(repo_root, collection), collection_name=collection
+            collection_sidecar_path(repo_root, collection),
+            collection_name=collection,
         )
         for card in loaded.cards:
             entry = sidecar["cards"].get(card.card_id)
@@ -238,9 +243,16 @@ def stats(
     if collection is not None:
         loaded = load_collection(repo_root, collection)
         sidecar = load_collection_sidecar(
-            collection_sidecar_path(repo_root, collection), collection_name=collection
+            collection_sidecar_path(repo_root, collection),
+            collection_name=collection,
         )
-        totals = {"cards_total": len(loaded.cards), "due_today": 0, "new": 0, "young": 0, "mature": 0}
+        totals = {
+            "cards_total": len(loaded.cards),
+            "due_today": 0,
+            "new": 0,
+            "young": 0,
+            "mature": 0,
+        }
         for card in loaded.cards:
             entry = sidecar["cards"].get(card.card_id)
             state = entry["state"] if entry is not None else scheduler.new_card(today)
