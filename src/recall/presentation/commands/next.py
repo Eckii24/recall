@@ -14,6 +14,7 @@ def run(
     show_answer: bool = False,
     output_format: str = "text",
     shuffle: bool = False,
+    new_only: bool = False,
     today: date | None = None,
 ) -> str:
     result = next_cards(
@@ -22,6 +23,7 @@ def run(
         limit=limit,
         show_answer=show_answer,
         shuffle=shuffle,
+        new_only=new_only,
         today=today,
     )
     if output_format == "json":

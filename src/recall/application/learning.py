@@ -33,6 +33,10 @@ from recall.infrastructure.sidecar_store import (
 MATURE_INTERVAL_DAYS = 21
 
 
+def _is_new(state: CardState) -> bool:
+    return state.reps == 0 and state.interval == 0
+
+
 def _collection_card_state(
     repo_root: Path,
     collection_name: str,
@@ -106,6 +110,7 @@ def next_cards(
     limit: int = 1,
     show_answer: bool = False,
     shuffle: bool = False,
+    new_only: bool = False,
     today: date | None = None,
 ) -> NextCardsResult:
     today = today or date.today()
@@ -121,6 +126,8 @@ def next_cards(
         for card in loaded.cards:
             entry = sidecar["cards"].get(card.card_id)
             state = entry["state"] if entry is not None else scheduler.new_card(today)
+            if new_only and not _is_new(state):
+                continue
             if scheduler.is_due(state, today):
                 due_cards.append(
                     DueCard(
@@ -147,6 +154,8 @@ def next_cards(
 
     for card in deck_data.cards:
         state = sidecar["cards"].get(card.card_id, scheduler.new_card(today))
+        if new_only and not _is_new(state):
+            continue
         if scheduler.is_due(state, today):
             due_cards.append(
                 DueCard(

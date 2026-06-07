@@ -96,6 +96,38 @@ class CLINextReviewStatsTests(unittest.TestCase):
         self.assertIn("answer", payload["cards"][0])
         self.assertEqual(payload["cards"][0]["state"]["due"], "2026-06-05")
 
+    def test_next_new_only_returns_only_never_reviewed_cards(self) -> None:
+        save_sidecar(
+            self.repo / "decks" / "architecture.flashcards.json",
+            {
+                "version": 1,
+                "deck": "architecture",
+                "cards": {
+                    "architecture-cqrs": CardState(
+                        due=date(2026, 6, 5), ease=2.5, interval=0, reps=0
+                    ),
+                    "architecture-event-sourcing": CardState(
+                        due=date(2026, 6, 5), ease=2.5, interval=1, reps=1
+                    ),
+                },
+            },
+        )
+
+        result = next_run(
+            repo_root=self.repo,
+            deck="architecture",
+            limit=5,
+            show_answer=False,
+            output_format="json",
+            shuffle=False,
+            new_only=True,
+            today=date(2026, 6, 5),
+        )
+
+        payload = json.loads(result)
+        self.assertEqual(len(payload["cards"]), 1)
+        self.assertEqual(payload["cards"][0]["card_id"], "architecture-cqrs")
+
     def test_review_updates_sidecar_and_returns_old_and_new_state(self) -> None:
         save_sidecar(
             self.repo / "decks" / "architecture.flashcards.json",

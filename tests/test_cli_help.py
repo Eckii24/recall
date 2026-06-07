@@ -44,6 +44,7 @@ def test_next_help_describes_scope_and_options() -> None:
     assert "Maximum number of due cards to return." in result.stdout
     assert "--show-answer" in result.stdout
     assert "--shuffle" in result.stdout
+    assert "--new-only" in result.stdout
 
 
 def test_deck_create_help_describes_required_argument() -> None:

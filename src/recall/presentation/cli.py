@@ -408,6 +408,11 @@ def next_command(
         "--shuffle",
         help="Shuffle due cards before truncating to --limit.",
     ),
+    new_only: bool = typer.Option(
+        False,
+        "--new-only",
+        help="Only return cards that have never been reviewed.",
+    ),
 ) -> None:
     """Show the next due cards for a deck or collection."""
     _resolve_scope(deck, collection, require_one=True)
@@ -418,6 +423,7 @@ def next_command(
         limit=limit,
         show_answer=show_answer,
         shuffle=shuffle,
+        new_only=new_only,
     )
     _emit_next_result(result, output_format, show_answer)
 
